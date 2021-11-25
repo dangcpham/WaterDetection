@@ -18,10 +18,12 @@ snow_path = f"{DATA_DIR}/melting_snow_1-16.9366.asc"
 sand_path = f"{DATA_DIR}/quartz_gds74.5830.asc"
 seawater_path = f"{DATA_DIR}/seawater_open_ocean_sw2.9627.asc"
 basalt_path = f"{DATA_DIR}/basalt_weathered_br93-43.7492.asc"
-veg_path = f"{DATA_DIR}/Agrococcus_KM349956.csv"
+veg_path = f"{DATA_DIR}/leafyspurge_spurge-a2-jun98.11306.asc"
 
-surface_paths = {"snow": snow_path, "sand": sand_path,
-                 "seawater": seawater_path, "basalt": basalt_path,
+surface_paths = {"snow": snow_path, 
+                 "sand": sand_path,
+                 "seawater": seawater_path, 
+                 "basalt": basalt_path,
                  "veg": veg_path}
 cloud_path = [cloud_path]
 labels = ["cloud"] + list(surface_paths.keys())
