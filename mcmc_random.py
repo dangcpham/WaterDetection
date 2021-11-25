@@ -48,14 +48,13 @@ for snr in settings.MCMC_SNRS:
         pos = utils.uniform_unity(size=(settings.MCMC_N_WALKERS,
                                         len(settings.labels)))
         nwalkers, ndim = pos.shape
-
-        # start the sampler
-        sampler = emcee.EnsembleSampler(
-                nwalkers, ndim, log_probability, args=(yobs, yerr),
-                pool=pool
-        )
-        
         with Pool() as pool:
+            # start the sampler
+            sampler = emcee.EnsembleSampler(
+                    nwalkers, ndim, log_probability, args=(yobs, yerr),
+                    pool=pool
+            )        
+        
             # start sampling
             sampler.run_mcmc(pos, settings.MCMC_CHAINS_LEN, progress=True,
                              skip_initial_state_check=True)
