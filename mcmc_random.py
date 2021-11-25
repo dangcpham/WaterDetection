@@ -84,11 +84,11 @@ for i, true_theta in enumerate(true_thetas):
     # save to array
     all_chains.append(samples)
     
-# save data
-pickle.dump((true_thetas, all_chains), 
-    open(f'{settings.OUTPUT_DIR}/MCMC_SNR_{snr}_true_and_chains.pkl', 'wb'))
-pickle.dump(all_y, 
-    open(f'{settings.OUTPUT_DIR}/MCMC_SNR_{snr}_ydata.pkl', 'wb'))
+    # save data
+    pickle.dump((true_thetas, all_chains), 
+        open(f'{settings.OUTPUT_DIR}/MCMC_SNR_{snr}_true_and_chains.pkl', 'wb'))
+    pickle.dump(all_y, 
+        open(f'{settings.OUTPUT_DIR}/MCMC_SNR_{snr}_ydata.pkl', 'wb'))
     
     
     
