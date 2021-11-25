@@ -51,13 +51,13 @@ for snr in settings.MCMC_SNRS:
 
         # start the sampler
         sampler = emcee.EnsembleSampler(
-                nwalkers, ndim, log_probability, args=(yobs, yerr)
+                nwalkers, ndim, log_probability, args=(yobs, yerr),
+                pool=pool
         )
         
         with Pool() as pool:
             # start sampling
             sampler.run_mcmc(pos, settings.MCMC_CHAINS_LEN, progress=True,
-                             pool=pool, 
                              skip_initial_state_check=True)
         
         # get burn-in and thinning from ACT
