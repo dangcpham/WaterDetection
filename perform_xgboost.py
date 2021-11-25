@@ -7,16 +7,21 @@ from xgboost import XGBClassifier
 from sklearn.metrics import balanced_accuracy_score
 
 # get generated data
-filter_names, colors = pickle.load(open("output/colors_f1.pkl", "rb"))
+filter_names, colors = pickle.load(open(f"{settings.OUTPUT_DIR}/colors_f1.pkl", "rb"))
 # load all component combinations that sum to unity
 component_names, unity_surface_combinations = pickle.load(
-    open("output/surface_combinations.pkl", "rb"))
+    open(f"{settings.OUTPUT_DIR}/surface_combinations.pkl", "rb"))
 unity_surface_combinations_df = pd.DataFrame(unity_surface_combinations, 
                                              columns=component_names)
 
+# store all trained models
 xgb_clfs = []
+# storing balanced accuracy at no noise S/N
 ba_score_no_noise = np.zeros(len(settings.CLASSIFYING_COMPONENTS))
-feature_importance = np.zeros((len(settings.CLASSIFYING_COMPONENTS), len(filter_names)))
+# storing feature importance scores
+feature_importance = np.zeros(
+    (len(settings.CLASSIFYING_COMPONENTS), len(filter_names))
+    )
 
 for i, component in enumerate(settings.CLASSIFYING_COMPONENTS):
     # get training data and labels for machine learning
@@ -28,11 +33,13 @@ for i, component in enumerate(settings.CLASSIFYING_COMPONENTS):
     
     # train XGBoost
     model = XGBClassifier(objective="binary:logistic", 
-              tree_method = "auto",
-              scale_pos_weight = len(y_train[y_train == 0])/len(y_train[y_train > 0]),
-              use_label_encoder=False,
-              eval_metric=balanced_accuracy_score)
+        tree_method = "auto",
+        scale_pos_weight = len(y_train[y_train == 0])/len(y_train[y_train > 0]),
+        gpu_id = 0, 
+        use_label_encoder=False,
+        eval_metric=balanced_accuracy_score)
     model.fit(X_train, y_train)
+    print(f"{component}: Finished training XGBoost")
     
     # append to list of trained models
     xgb_clfs.append(model)
@@ -64,7 +71,9 @@ for i, component in enumerate(settings.CLASSIFYING_COMPONENTS):
             ba_scores[j, k] = balanced_accuracy_score(y_test, y_pred[j, k])
     
     # save data
-    pickle.dump((model, y_test, settings.SNRS, y_pred_no_noise, y_pred, ba_score_no_noise[i], ba_scores), 
-                open(f"output/result_{component}.pkl", "wb"))
+    pickle.dump((model, y_test, settings.SNRS, y_pred_no_noise, y_pred, 
+                 ba_score_no_noise[i], ba_scores), 
+                open(f"{settings.OUTPUT_DIR}/result_{component}.pkl", "wb"))
 
-pickle.dump((model, feature_importance), open(f"output/models_and_features.pkl", "wb"))
+pickle.dump((xgb_clfs, feature_importance), 
+            open(f"{settings.OUTPUT_DIR}/models_and_features.pkl", "wb"))

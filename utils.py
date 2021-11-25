@@ -1,6 +1,19 @@
 import numpy as np
 from scipy.interpolate import interp1d
 
+def reshape_to_2D(y):
+    """
+        Reshape an array with shape (n,) to (n,1).
+        
+        Parameters:
+            y (array): the array with shape (n,)
+        
+        Returns:
+            (array): array with shape (n,1)
+    """
+    
+    return y.reshape(y.shape[0], 1)
+
 def rayleigh_function(X, star_spectrum, p):
     """
         Returns the additive term for Rayleigh scattering.
@@ -16,8 +29,8 @@ def rayleigh_function(X, star_spectrum, p):
          Returns:
             (array): Rayleigh scattering (same unit as star_spectrum)
     """
-    assert len(X.shape) == 1
-    assert X.shape == star_spectrum.shape
+#     assert len(X.shape) == 1
+#     assert X.shape == star_spectrum.shape
     
     rayleigh_tau  = 0.008569 * X**(-4) *(1 + 0.0113 * X**(-2) + 0.00013 * X**(-4))
     rayleigh_tau *= p
@@ -96,9 +109,7 @@ def make_all_spectra(X, combinations, cloud_index,
     """
     # separate combinations into surface and cloud
     surface_combinations = np.delete(combinations, cloud_index, axis=1)
-    cloud_composition =  combinations[:,cloud_index]
-    # reshape so we can do matrix multiplication later
-    cloud_composition = cloud_composition.reshape(cloud_composition.shape[0], 1)
+    cloud_composition =  reshape_to_2D(combinations[:,cloud_index])
     
     # surface flux
     weighted_surface_albedos = surface_combinations.dot(surfaces_albedo)
@@ -139,3 +150,61 @@ def filter_func(initial, x, step):
     output[~inrange] = 0
 
     return output
+
+def uniform_unity(a=0., b=1., size=1):
+    """
+        Random variable drawing from uniform distribution such that
+        the sum of weights (in n-dimensions) is unity. That is,
+        we are drawing random variables on the (n-1) simplex.
+    
+        Algorithm from whuber's answer to
+        https://stats.stackexchange.com/questions/14059/generate-uniformly-distributed-weights-that-sum-to-unity
+        
+        Parameters:
+            a, b (float): range of the uniform distribution, inclusive.
+                Optional. Default is (a,b) = (0, 1)
+            size (tuple): (numbero of samples, number of dimensions).
+                Optional. Default is (1, 1) (one sample, one dimension).
+            
+        Returns:
+            (array): random variables with shape (size).
+    """
+    
+    # x ~ U(a,b)
+    x = np.random.uniform(low=a, high=b, size=size)
+    # y = -log(x), so that each y_i has Gamma(1) distribution
+    y = -np.log(x)
+    # y_1 + ... y_n = sum(y)
+    y_sum = np.sum(y, axis=1)
+    # vector reshaping things so we can divide next
+    y_sum = reshape_to_2D(y_sum)
+    # normalize y/sum(y) => w is Dirichlet(1,...,1) = Uniform
+    # with sum(w) = 1
+    w = y/y_sum
+    
+    return w
+
+def get_earth_composition(cloud_percent):
+    """
+        Give earth surface composition percentage.
+        Land percentage given from Kaltenegger (2007) 
+    """
+    cloud_composition = cloud_percent
+
+    seawater_composition = 0.70*(100-cloud_composition)
+    land_composition = 0.30*(100-cloud_composition)
+    
+    basalt_composition = 0.18*land_composition
+    snow_composition = 0.15*land_composition
+    sand_composition = 0.07*land_composition
+    tree_composition = 0.6*land_composition
+
+    earth_composition = {'cloud': cloud_composition,
+                         'seawater': seawater_composition, 
+                         'basalt': basalt_composition, 
+                         'snow': snow_composition, 
+                         'veg': tree_composition, 
+                         'sand': sand_composition
+                        }
+    
+    return earth_composition
