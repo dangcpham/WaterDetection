@@ -1,5 +1,10 @@
 from utils_mcmc import *
 import emcee
+from multiprocessing import Pool
+
+from multiprocessing import cpu_count
+
+print(f"CPU: {cpu_count()}")
 
 # generate random true combinations
 true_thetas = utils.uniform_unity(size=(settings.MCMC_N_REALIZATIONS,
@@ -48,10 +53,12 @@ for snr in settings.MCMC_SNRS:
         sampler = emcee.EnsembleSampler(
                 nwalkers, ndim, log_probability, args=(yobs, yerr)
         )
-
-        # start sampling
-        sampler.run_mcmc(pos, settings.MCMC_CHAINS_LEN, progress=True, 
-                        skip_initial_state_check=True)
+        
+        with Pool() as pool:
+            # start sampling
+            sampler.run_mcmc(pos, settings.MCMC_CHAINS_LEN, progress=True,
+                             pool=pool, 
+                             skip_initial_state_check=True)
         
         # get burn-in and thinning from ACT
         tau = sampler.get_autocorr_time()[selected_idx]

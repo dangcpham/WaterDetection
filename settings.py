@@ -46,3 +46,5 @@ MCMC_N_REALIZATIONS = 10
 MCMC_SNRS = [10, 50, 100]
 MCMC_N_WALKERS = 25
 MCMC_CHAINS_LEN = 15000
+
+color_list = ['tab:red', 'tab:orange', 'tab:blue']
