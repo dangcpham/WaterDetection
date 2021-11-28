@@ -15,6 +15,8 @@ args = parser.parse_args()
 assert args.mode in ['all', 'good']
 mode = args.mode
 
+print(f'Performing XGBoost on {mode} filters')
+
 # get generated data
 filter_names, colors = pickle.load(open(f"{settings.OUTPUT_DIR}/colors_f1.pkl", "rb"))
 
@@ -24,7 +26,9 @@ if mode == 'good':
         open(f"{settings.OUTPUT_DIR}/good_filters_info.pkl", "rb"))
     good_filters_idx = np.where(np.isin(
         filter_names, list(good_filters_info.keys()) ))[0]
+    
     colors = colors[:,good_filters_idx]
+    filter_names = list(good_filters_info.keys())
 
 # load all component combinations that sum to unity
 component_names, unity_surface_combinations = pickle.load(
