@@ -5,9 +5,27 @@ import settings
 from sklearn.model_selection import train_test_split
 from xgboost import XGBClassifier
 from sklearn.metrics import balanced_accuracy_score
+import argparse
+
+parser = argparse.ArgumentParser()
+parser.add_argument('-m', '--mode',
+                    type=str, help='train using "all" or "good" filters?',
+                    required=True)
+args = parser.parse_args()
+assert args.mode in ['all', 'good']
+mode = args.mode
 
 # get generated data
 filter_names, colors = pickle.load(open(f"{settings.OUTPUT_DIR}/colors_f1.pkl", "rb"))
+
+if mode == 'good':
+    # load good filters
+    good_filters_info = pickle.load(
+        open(f"{settings.OUTPUT_DIR}/good_filters_info.pkl", "rb"))
+    good_filters_idx = np.where(np.isin(
+        filter_names, list(good_filters_info.keys()) ))[0]
+    colors = colors[:,good_filters_idx]
+
 # load all component combinations that sum to unity
 component_names, unity_surface_combinations = pickle.load(
     open(f"{settings.OUTPUT_DIR}/surface_combinations.pkl", "rb"))
@@ -72,8 +90,8 @@ for i, component in enumerate(settings.CLASSIFYING_COMPONENTS):
     
     # save data
     pickle.dump((model, y_test, settings.SNRS, y_pred_no_noise, y_pred, 
-                 ba_score_no_noise[i], ba_scores), 
-                open(f"{settings.OUTPUT_DIR}/result_{component}.pkl", "wb"))
+                ba_score_no_noise[i], ba_scores), 
+                open(f"{settings.OUTPUT_DIR}/result_{component}_{mode}.pkl", "wb"))
 
 pickle.dump((xgb_clfs, feature_importance), 
-            open(f"{settings.OUTPUT_DIR}/models_and_features.pkl", "wb"))
+            open(f"{settings.OUTPUT_DIR}/models_and_features_{mode}.pkl", "wb"))
