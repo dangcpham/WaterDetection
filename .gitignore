@@ -3,3 +3,4 @@ __pycache__/
 output/all_spectra.pkl
 output/result_*.pkl
 output/mcmc_*.pkl
+backup/

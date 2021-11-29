@@ -7,10 +7,10 @@ from multiprocessing import Pool
 parser = argparse.ArgumentParser()
 parser.add_argument('-m', '--mode',
                     type=str, help='single or multiprocessing',
-                    required=True)
-parser.add_argument('-r', '--restart',
-                    type=bool, nargs='?', const=False,
-                    help='restart using existing run?')
+                    default='single')
+parser.add_argument('--feature', default=True, 
+                    action=argparse.BooleanOptionalAction)
+
 args = parser.parse_args()
 assert args.mode in ['single', 'multiprocessing']
 restart = args.restart
@@ -19,19 +19,17 @@ print(f'Mode: {args.mode}')
 print(f'Restarting from existing runs: {restart}')
 
 # generate random true combinations
-
+true_thetas = utils.uniform_unity(size=(settings.MCMC_N_REALIZATIONS,
+                                            len(settings.labels) ) )
 if restart:
     try:
         true_thetas = pickle.load(
             open(f'{settings.OUTPUT_DIR}/MCMC_true_thetas.pkl', 'rb'))
     except OSError:
-        true_thetas = utils.uniform_unity(size=(settings.MCMC_N_REALIZATIONS,
-                                            len(settings.labels) ) )
-        pickle.dump(true_thetas,
-            open(f'{settings.OUTPUT_DIR}/MCMC_true_thetas.pkl', 'wb'))
+        print("Could not find previous true_thetas, starting new")
+        restart = False
+        pass
 else:
-    true_thetas = utils.uniform_unity(size=(settings.MCMC_N_REALIZATIONS,
-                                            len(settings.labels) ) )
     pickle.dump(true_thetas,
         open(f'{settings.OUTPUT_DIR}/MCMC_true_thetas.pkl', 'wb'))
     
@@ -50,22 +48,18 @@ for snr in settings.MCMC_SNRS:
     # shape is (n_realizations, n_filters, 2)
     # yobs = all_y[i,:,0]. yerr = all_y[i,:,1]
     # all_chains holds all sampled MCMC chains
+    
+    all_y = np.zeros((settings.MCMC_N_REALIZATIONS, 
+                        len(good_filters_values), 2) )
+    all_chains = []
+        
     if restart:
         try:
             # try to load existing runs
-            _,all_chains = pickle.load(
-                open(f'{settings.OUTPUT_DIR}/MCMC_SNR_{snr}_true_and_chains.pkl', 'wb'))
-            all_y = pickle.load(
-                open(f'{settings.OUTPUT_DIR}/MCMC_SNR_{snr}_ydata.pkl', 'wb'))
+            _, all_chains = pickle.load(open(f'{settings.OUTPUT_DIR}/MCMC_SNR_{snr}_true_and_chains.pkl', 'rb'))
+            all_y = pickle.load(open(f'{settings.OUTPUT_DIR}/MCMC_SNR_{snr}_ydata.pkl', 'rb'))
         except OSError:
-            # if the existing runs don't exist, start from new
-            all_y = np.zeros((settings.MCMC_N_REALIZATIONS, 
-                        len(good_filters_values), 2) )
-            all_chains = []
-    else:
-        all_y = np.zeros((settings.MCMC_N_REALIZATIONS, 
-                        len(good_filters_values), 2) )
-        all_chains = []
+            pass        
 
     # the starting position (only for restarting)
     if restart: 
